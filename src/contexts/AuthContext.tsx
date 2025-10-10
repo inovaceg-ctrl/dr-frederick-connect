@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      const redirectUrl = `${window.location.origin}/patient-area`;
+      const redirectUrl = `${window.location.origin}/auth`;
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -64,8 +64,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       if (data.user) {
-        toast.success("Conta criada com sucesso! Bem-vindo!");
-        navigate("/patient-area");
+        toast.success("Conta criada com sucesso! Verificando permissões...");
+        
+        // Check user role before redirecting
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .maybeSingle();
+        
+        if (roleData?.role === "doctor") {
+          navigate("/doctor-area");
+        } else {
+          navigate("/patient-area");
+        }
       }
 
       return { error: null };
@@ -89,7 +101,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (data.user) {
         toast.success("Login realizado com sucesso!");
-        navigate("/patient-area");
+        
+        // Check user role before redirecting
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .maybeSingle();
+        
+        if (roleData?.role === "doctor") {
+          navigate("/doctor-area");
+        } else {
+          navigate("/patient-area");
+        }
       }
 
       return { error: null };
