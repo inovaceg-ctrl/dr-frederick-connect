@@ -3,7 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Video, MessageCircle, Calendar, LogOut, User } from "lucide-react";
+import { ChatBox } from "@/components/chat/ChatBox";
+import { VideoCall } from "@/components/video/VideoCall";
+import { AppointmentCalendar } from "@/components/appointments/AppointmentCalendar";
 
 const PatientArea = () => {
   const { user, loading, signOut } = useAuth();
@@ -49,92 +53,35 @@ const PatientArea = () => {
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 py-12">
-        <div className="text-center mb-12 animate-slide-up">
-          <h2 className="text-4xl font-bold mb-4">
-            Bem-vindo à sua <span className="text-gradient">Área do Paciente</span>
-          </h2>
-          <p className="text-xl text-muted-foreground">
-            Em breve você terá acesso completo a chat, videochamadas e agendamentos
-          </p>
-        </div>
+      <div className="container mx-auto px-4 py-8">
+        <Tabs defaultValue="chat" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto mb-8">
+            <TabsTrigger value="chat" className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">Chat</span>
+            </TabsTrigger>
+            <TabsTrigger value="video" className="flex items-center gap-2">
+              <Video className="w-4 h-4" />
+              <span className="hidden sm:inline">Vídeo</span>
+            </TabsTrigger>
+            <TabsTrigger value="appointments" className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              <span className="hidden sm:inline">Agendamentos</span>
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          <Card className="border-none shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader>
-              <div className="w-12 h-12 mb-4 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                <MessageCircle className="w-6 h-6 text-white" />
-              </div>
-              <CardTitle>Chat Direto</CardTitle>
-              <CardDescription>
-                Converse com o Dr. Frederick por mensagens
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full" disabled>
-                Em breve
-              </Button>
-            </CardContent>
-          </Card>
+          <TabsContent value="chat">
+            <ChatBox />
+          </TabsContent>
 
-          <Card className="border-none shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader>
-              <div className="w-12 h-12 mb-4 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                <Video className="w-6 h-6 text-white" />
-              </div>
-              <CardTitle>Videochamada</CardTitle>
-              <CardDescription>
-                Realize suas sessões de terapia online
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full" disabled>
-                Em breve
-              </Button>
-            </CardContent>
-          </Card>
+          <TabsContent value="video">
+            <VideoCall />
+          </TabsContent>
 
-          <Card className="border-none shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader>
-              <div className="w-12 h-12 mb-4 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-white" />
-              </div>
-              <CardTitle>Agendamentos</CardTitle>
-              <CardDescription>
-                Gerencie suas consultas e horários
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full" disabled>
-                Em breve
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="mt-12 border-none shadow-xl bg-gradient-to-br from-primary/5 to-secondary/5">
-          <CardContent className="p-8">
-            <h3 className="text-2xl font-bold mb-4">Próximos Passos</h3>
-            <ul className="space-y-3 text-muted-foreground">
-              <li className="flex items-start gap-2">
-                <span className="text-primary font-bold">•</span>
-                <span>A funcionalidade de chat será implementada para comunicação em tempo real</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary font-bold">•</span>
-                <span>Sistema de videochamadas para sessões de terapia online</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary font-bold">•</span>
-                <span>Calendário de agendamentos integrado</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary font-bold">•</span>
-                <span>Histórico de sessões e evolução do tratamento</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
+          <TabsContent value="appointments">
+            <AppointmentCalendar />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
