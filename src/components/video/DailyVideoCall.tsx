@@ -30,11 +30,25 @@ export const DailyVideoCall = () => {
     
     setIsCreatingRoom(true);
     try {
+      // Get the current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        toast.error('Sessão expirada. Faça login novamente.');
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('create-video-room', {
-        body: { appointmentId: null }
+        body: { appointmentId: null },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Function invoke error:', error);
+        throw error;
+      }
 
       console.log('Room created:', data);
       setRoomUrl(data.roomUrl);

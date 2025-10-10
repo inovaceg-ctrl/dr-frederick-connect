@@ -19,12 +19,24 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
     
     // Get user from auth header
-    const authHeader = req.headers.get('Authorization')!;
+    const authHeader = req.headers.get('Authorization');
+    
+    if (!authHeader) {
+      console.error('No authorization header provided');
+      throw new Error('Unauthorized - No auth header');
+    }
+
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
-    if (authError || !user) {
-      throw new Error('Unauthorized');
+    if (authError) {
+      console.error('Auth error:', authError);
+      throw new Error('Unauthorized - Invalid token');
+    }
+    
+    if (!user) {
+      console.error('No user found');
+      throw new Error('Unauthorized - No user');
     }
 
     const { appointmentId } = await req.json();
