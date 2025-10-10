@@ -88,9 +88,17 @@ export const DailyVideoCall = () => {
   };
 
   const joinRoom = async (url: string) => {
-    if (!containerRef.current) return;
+    console.log('joinRoom called with URL:', url);
+    console.log('containerRef.current:', containerRef.current);
+    
+    if (!containerRef.current) {
+      console.error('Container ref not found');
+      toast.error('Erro: Container não encontrado');
+      return;
+    }
 
     try {
+      console.log('Creating Daily iframe...');
       const callFrame = DailyIframe.createFrame(containerRef.current, {
         iframeStyle: {
           width: '100%',
@@ -102,9 +110,11 @@ export const DailyVideoCall = () => {
         showFullscreenButton: true,
       });
 
+      console.log('Daily iframe created:', callFrame);
       callFrameRef.current = callFrame;
 
       callFrame.on('left-meeting', () => {
+        console.log('User left meeting');
         setIsInCall(false);
         setRoomUrl(null);
         callFrame.destroy();
@@ -112,14 +122,24 @@ export const DailyVideoCall = () => {
       });
 
       callFrame.on('joined-meeting', () => {
+        console.log('User joined meeting');
         setIsInCall(true);
         toast.success('Conectado à videochamada!');
       });
 
+      callFrame.on('error', (error: any) => {
+        console.error('Daily iframe error:', error);
+        toast.error(`Erro no Daily: ${error.errorMsg || 'Erro desconhecido'}`);
+      });
+
+      console.log('Joining room...');
       await callFrame.join({ url });
+      console.log('Join called successfully');
     } catch (error) {
       console.error('Error joining room:', error);
-      toast.error('Erro ao entrar na sala');
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error(`Erro ao entrar na sala: ${errorMessage}`);
+      setIsCreatingRoom(false);
     }
   };
 
@@ -149,6 +169,8 @@ export const DailyVideoCall = () => {
         <CardTitle>Videochamada</CardTitle>
       </CardHeader>
       <CardContent>
+        <div ref={containerRef} className="w-full" style={{ display: isInCall ? 'block' : 'none' }} />
+        
         {!isInCall ? (
           <div className="flex flex-col items-center justify-center p-8 space-y-4">
             <Video className="h-16 w-16 text-muted-foreground" />
@@ -187,7 +209,6 @@ export const DailyVideoCall = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            <div ref={containerRef} className="w-full" />
             <div className="flex justify-center gap-4">
               <Button
                 variant={isCameraOn ? "default" : "destructive"}
