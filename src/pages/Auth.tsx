@@ -5,27 +5,78 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const { signIn, signUp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Login form state
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+
+  // Signup form state
+  const [signupName, setSignupName] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [signupConfirm, setSignupConfirm] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!loginEmail || !loginPassword) {
+      toast.error("Por favor, preencha todos os campos");
+      return;
+    }
+
     setIsLoading(true);
-    // Implementação futura com Lovable Cloud
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    
+    const { error } = await signIn(loginEmail, loginPassword);
+    
+    if (error) {
+      if (error.message?.includes("Invalid login credentials")) {
+        toast.error("Email ou senha incorretos");
+      } else {
+        toast.error("Erro ao fazer login: " + error.message);
+      }
+    }
+    
+    setIsLoading(false);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!signupName || !signupEmail || !signupPassword || !signupConfirm) {
+      toast.error("Por favor, preencha todos os campos");
+      return;
+    }
+
+    if (signupPassword !== signupConfirm) {
+      toast.error("As senhas não coincidem");
+      return;
+    }
+
+    if (signupPassword.length < 6) {
+      toast.error("A senha deve ter no mínimo 6 caracteres");
+      return;
+    }
+
     setIsLoading(true);
-    // Implementação futura com Lovable Cloud
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    
+    const { error } = await signUp(signupEmail, signupPassword, signupName);
+    
+    if (error) {
+      if (error.message?.includes("already registered")) {
+        toast.error("Este email já está cadastrado");
+      } else {
+        toast.error("Erro ao criar conta: " + error.message);
+      }
+    }
+    
+    setIsLoading(false);
   };
 
   return (
@@ -66,6 +117,8 @@ const Auth = () => {
                       id="login-email"
                       type="email"
                       placeholder="seu@email.com"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
                       required
                     />
                   </div>
@@ -77,6 +130,8 @@ const Auth = () => {
                       id="login-password"
                       type="password"
                       placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
                       required
                     />
                   </div>
@@ -87,12 +142,6 @@ const Auth = () => {
                   >
                     {isLoading ? "Entrando..." : "Entrar"}
                   </Button>
-                  <p className="text-sm text-center text-muted-foreground">
-                    Esqueceu sua senha?{" "}
-                    <a href="#" className="text-primary hover:underline">
-                      Recuperar senha
-                    </a>
-                  </p>
                 </form>
               </TabsContent>
 
@@ -106,6 +155,8 @@ const Auth = () => {
                       id="signup-name"
                       type="text"
                       placeholder="Seu nome"
+                      value={signupName}
+                      onChange={(e) => setSignupName(e.target.value)}
                       required
                     />
                   </div>
@@ -117,6 +168,8 @@ const Auth = () => {
                       id="signup-email"
                       type="email"
                       placeholder="seu@email.com"
+                      value={signupEmail}
+                      onChange={(e) => setSignupEmail(e.target.value)}
                       required
                     />
                   </div>
@@ -128,6 +181,8 @@ const Auth = () => {
                       id="signup-password"
                       type="password"
                       placeholder="••••••••"
+                      value={signupPassword}
+                      onChange={(e) => setSignupPassword(e.target.value)}
                       required
                     />
                   </div>
@@ -139,6 +194,8 @@ const Auth = () => {
                       id="signup-confirm"
                       type="password"
                       placeholder="••••••••"
+                      value={signupConfirm}
+                      onChange={(e) => setSignupConfirm(e.target.value)}
                       required
                     />
                   </div>
@@ -149,25 +206,11 @@ const Auth = () => {
                   >
                     {isLoading ? "Criando conta..." : "Criar conta"}
                   </Button>
-                  <p className="text-xs text-center text-muted-foreground">
-                    Ao criar uma conta, você concorda com nossos{" "}
-                    <a href="#" className="text-primary hover:underline">
-                      Termos de Serviço
-                    </a>{" "}
-                    e{" "}
-                    <a href="#" className="text-primary hover:underline">
-                      Política de Privacidade
-                    </a>
-                  </p>
                 </form>
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
-
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          A área do paciente estará totalmente funcional em breve com chat, vídeo e áudio
-        </p>
       </div>
     </div>
   );
