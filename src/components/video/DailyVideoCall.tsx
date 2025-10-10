@@ -18,12 +18,28 @@ export const DailyVideoCall = () => {
   const [roomUrl, setRoomUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('DailyVideoCall component mounted. User:', user?.email);
+    console.log('Initial state - isInCall:', isInCall, 'isCreatingRoom:', isCreatingRoom);
+    
     return () => {
+      console.log('DailyVideoCall component unmounting');
       if (callFrameRef.current) {
         callFrameRef.current.destroy();
       }
     };
   }, []);
+
+  const resetState = () => {
+    console.log('Resetting state...');
+    if (callFrameRef.current) {
+      callFrameRef.current.destroy();
+      callFrameRef.current = null;
+    }
+    setIsInCall(false);
+    setIsCreatingRoom(false);
+    setRoomUrl(null);
+    toast.info('Estado resetado');
+  };
 
   const createAndJoinRoom = async () => {
     console.log('createAndJoinRoom called, user:', user);
@@ -139,23 +155,35 @@ export const DailyVideoCall = () => {
             <p className="text-muted-foreground text-center">
               Clique no botão abaixo para iniciar uma videochamada
             </p>
-            <Button 
-              onClick={createAndJoinRoom} 
-              disabled={isCreatingRoom}
-              size="lg"
-            >
-              {isCreatingRoom ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Criando sala...
-                </>
-              ) : (
-                <>
-                  <Video className="h-5 w-5 mr-2" />
-                  Iniciar Videochamada
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => {
+                  console.log('Button clicked!');
+                  createAndJoinRoom();
+                }} 
+                disabled={isCreatingRoom}
+                size="lg"
+              >
+                {isCreatingRoom ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    Criando sala...
+                  </>
+                ) : (
+                  <>
+                    <Video className="h-5 w-5 mr-2" />
+                    Iniciar Videochamada
+                  </>
+                )}
+              </Button>
+              <Button 
+                onClick={resetState} 
+                variant="outline"
+                size="lg"
+              >
+                Resetar
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
