@@ -1,6 +1,6 @@
 import { Award, BookOpen, Heart, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import drFrederickGraduation from "@/assets/dr-frederick-graduation.jpg";
+import drFrederickFormal from "@/assets/dr-frederick-formal.jpg";
 
 const About = () => {
   const highlights = [
@@ -57,10 +57,11 @@ const About = () => {
           </div>
 
           <div className="relative animate-fade-in">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-3xl blur-2xl -z-10" />
             <img
-              src={drFrederickGraduation}
-              alt="Dr. Frederick Parreira - Formação"
-              className="rounded-3xl shadow-2xl w-full"
+              src={drFrederickFormal}
+              alt="Dr. Frederick Parreira"
+              className="rounded-3xl shadow-2xl w-full object-cover"
             />
           </div>
         </div>
