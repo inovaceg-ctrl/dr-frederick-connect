@@ -26,18 +26,28 @@ export const DailyVideoCall = () => {
   }, []);
 
   const createAndJoinRoom = async () => {
-    if (!user) return;
+    console.log('createAndJoinRoom called, user:', user);
+    
+    if (!user) {
+      console.error('No user found');
+      toast.error('Você precisa estar logado para criar uma videochamada');
+      return;
+    }
     
     setIsCreatingRoom(true);
     try {
+      console.log('Getting session...');
       // Get the current session token
       const { data: { session } } = await supabase.auth.getSession();
+      
+      console.log('Session:', session ? 'exists' : 'null');
       
       if (!session?.access_token) {
         toast.error('Sessão expirada. Faça login novamente.');
         return;
       }
 
+      console.log('Invoking create-video-room function...');
       const { data, error } = await supabase.functions.invoke('create-video-room', {
         body: { appointmentId: null },
         headers: {
