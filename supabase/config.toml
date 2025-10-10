@@ -1,1 +1,4 @@
 project_id = "lixfgwvrokftrkwrpbtv"
+
+[functions.create-video-room]
+verify_jwt = true

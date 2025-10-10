@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, MessageSquare, Calendar, Video } from "lucide-react";
 import DoctorChat from "@/components/doctor/DoctorChat";
 import DoctorAppointments from "@/components/doctor/DoctorAppointments";
-import DoctorVideoSessions from "@/components/doctor/DoctorVideoSessions";
+import DoctorVideoManager from "@/components/doctor/DoctorVideoManager";
 
 const DoctorArea = () => {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -77,7 +77,7 @@ const DoctorArea = () => {
           </TabsContent>
 
           <TabsContent value="video">
-            <DoctorVideoSessions />
+            <DoctorVideoManager />
           </TabsContent>
         </Tabs>
       </div>

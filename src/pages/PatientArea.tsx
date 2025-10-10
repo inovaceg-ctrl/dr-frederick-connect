@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Video, MessageCircle, Calendar, LogOut, User } from "lucide-react";
 import { ChatBox } from "@/components/chat/ChatBox";
-import { VideoCall } from "@/components/video/VideoCall";
+import { DailyVideoCall } from "@/components/video/DailyVideoCall";
 import { AppointmentCalendar } from "@/components/appointments/AppointmentCalendar";
 
 const PatientArea = () => {
@@ -75,7 +75,7 @@ const PatientArea = () => {
           </TabsContent>
 
           <TabsContent value="video">
-            <VideoCall />
+            <DailyVideoCall />
           </TabsContent>
 
           <TabsContent value="appointments">
