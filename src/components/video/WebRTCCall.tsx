@@ -167,7 +167,7 @@ export const WebRTCCall = () => {
         console.log('Connection state:', pc.connectionState);
         if (pc.connectionState === 'connected') {
           toast.success('Conectado ao peer!');
-          setIsInCall(true);
+          // Não precisa mais setar isInCall aqui, já está true
         } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
           toast.error('Conexão perdida');
           handleEndCall();
@@ -222,6 +222,14 @@ export const WebRTCCall = () => {
       console.log('Session created:', session);
 
       setSessionId(session.id);
+
+      // IMPORTANTE: Entrar na tela de chamada ANTES de configurar o peer
+      // para que os elementos de vídeo existam quando setarmos o srcObject
+      setIsInCall(true);
+      setIsCreating(false);
+      
+      // Aguardar próximo frame para garantir que os elementos foram renderizados
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Configurar peer connection
       const pc = await setupPeerConnection(room, true);
@@ -283,8 +291,10 @@ export const WebRTCCall = () => {
       console.error('Error starting call:', error);
       const errorMessage = error?.message || 'Erro desconhecido';
       toast.error(`Erro ao criar chamada: ${errorMessage}`);
-    } finally {
+      // Se houver erro, voltar ao estado inicial
+      setIsInCall(false);
       setIsCreating(false);
+      cleanup();
     }
   };
 
