@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Shield } from "lucide-react";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -66,6 +66,14 @@ const Navbar = () => {
             >
               Área do Paciente
             </Button>
+            <Button
+              onClick={() => window.location.href = "/doctor-login"}
+              variant="outline"
+              className="border-2 border-secondary hover:border-secondary/80"
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              Área Administrativa
+            </Button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -110,6 +118,14 @@ const Navbar = () => {
                 className="bg-primary hover:bg-primary-light text-primary-foreground w-full"
               >
                 Área do Paciente
+              </Button>
+              <Button
+                onClick={() => window.location.href = "/doctor-login"}
+                variant="outline"
+                className="border-2 border-secondary hover:border-secondary/80 w-full"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Área Administrativa
               </Button>
             </div>
           </div>
