@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from "react";
-import DailyIframe from "@daily-co/daily-js";
+import { useEffect, useState } from "react";
+import { JitsiMeeting } from "@jitsi/react-sdk";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,11 +22,10 @@ interface VideoSession {
 }
 
 const DoctorVideoManager = () => {
+  const { user } = useAuth();
   const [sessions, setSessions] = useState<VideoSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSession, setActiveSession] = useState<VideoSession | null>(null);
-  const callFrameRef = useRef<any>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchSessions();
@@ -47,9 +47,6 @@ const DoctorVideoManager = () => {
 
     return () => {
       supabase.removeChannel(channel);
-      if (callFrameRef.current) {
-        callFrameRef.current.destroy();
-      }
     };
   }, []);
 
@@ -70,8 +67,6 @@ const DoctorVideoManager = () => {
   };
 
   const joinSession = async (session: VideoSession) => {
-    if (!containerRef.current) return;
-
     try {
       // Update session status
       await supabase
@@ -79,42 +74,24 @@ const DoctorVideoManager = () => {
         .update({ status: "active", started_at: new Date().toISOString() })
         .eq("id", session.id);
 
-      const roomUrl = `https://${session.room_id}.daily.co/${session.room_id}`;
-      
-      const callFrame = DailyIframe.createFrame(containerRef.current, {
-        iframeStyle: {
-          width: '100%',
-          height: '600px',
-          border: '0',
-          borderRadius: '8px'
-        },
-        showLeaveButton: true,
-        showFullscreenButton: true,
-      });
-
-      callFrameRef.current = callFrame;
-
-      callFrame.on('left-meeting', async () => {
-        await supabase
-          .from("video_sessions")
-          .update({ status: "completed", ended_at: new Date().toISOString() })
-          .eq("id", session.id);
-        
-        setActiveSession(null);
-        callFrame.destroy();
-        callFrameRef.current = null;
-        fetchSessions();
-      });
-
-      callFrame.on('joined-meeting', () => {
-        toast.success("Conectado à videochamada!");
-      });
-
-      await callFrame.join({ url: roomUrl });
       setActiveSession(session);
+      toast.success("Entrando na videochamada!");
     } catch (error) {
       console.error("Error joining session:", error);
       toast.error("Erro ao entrar na sessão");
+    }
+  };
+
+  const handleMeetingEnd = async () => {
+    if (activeSession) {
+      await supabase
+        .from("video_sessions")
+        .update({ status: "completed", ended_at: new Date().toISOString() })
+        .eq("id", activeSession.id);
+      
+      setActiveSession(null);
+      fetchSessions();
+      toast.info('Videochamada encerrada');
     }
   };
 
@@ -161,7 +138,34 @@ const DoctorVideoManager = () => {
           <CardTitle>Videochamada com Paciente {activeSession.user_id.slice(0, 8)}...</CardTitle>
         </CardHeader>
         <CardContent>
-          <div ref={containerRef} className="w-full" />
+          <div className="w-full h-[600px]">
+            <JitsiMeeting
+              domain="meet.jit.si"
+              roomName={activeSession.room_id}
+              configOverwrite={{
+                startWithAudioMuted: false,
+                startWithVideoMuted: false,
+                disableModeratorIndicator: false,
+                enableEmailInStats: false,
+              }}
+              interfaceConfigOverwrite={{
+                DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
+                SHOW_JITSI_WATERMARK: false,
+              }}
+              userInfo={{
+                displayName: user?.email?.split('@')[0] || 'Médico',
+                email: user?.email || '',
+              }}
+              onApiReady={(externalApi) => {
+                console.log('Jitsi API ready - Doctor');
+              }}
+              onReadyToClose={handleMeetingEnd}
+              getIFrameRef={(iframeRef) => {
+                iframeRef.style.height = '600px';
+                iframeRef.style.width = '100%';
+              }}
+            />
+          </div>
         </CardContent>
       </Card>
     );

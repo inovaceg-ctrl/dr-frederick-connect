@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { JitsiMeeting } from "@jitsi/react-sdk";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Video, User, Calendar } from "lucide-react";
+import { Video, User, Calendar, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -20,8 +22,10 @@ interface VideoSession {
 }
 
 const DoctorVideoSessions = () => {
+  const { user } = useAuth();
   const [sessions, setSessions] = useState<VideoSession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeSession, setActiveSession] = useState<VideoSession | null>(null);
 
   useEffect(() => {
     fetchSessions();
@@ -62,11 +66,11 @@ const DoctorVideoSessions = () => {
     setLoading(false);
   };
 
-  const startSession = async (id: string) => {
+  const joinSession = async (session: VideoSession) => {
     const { error } = await supabase
       .from("video_sessions")
       .update({ status: "active", started_at: new Date().toISOString() })
-      .eq("id", id);
+      .eq("id", session.id);
 
     if (error) {
       console.error("Error starting session:", error);
@@ -74,22 +78,27 @@ const DoctorVideoSessions = () => {
       return;
     }
 
-    toast.success("Sessão iniciada!");
+    setActiveSession(session);
+    toast.success("Entrando na videochamada!");
   };
 
-  const endSession = async (id: string) => {
-    const { error } = await supabase
-      .from("video_sessions")
-      .update({ status: "completed", ended_at: new Date().toISOString() })
-      .eq("id", id);
+  const handleMeetingEnd = async () => {
+    if (activeSession) {
+      const { error } = await supabase
+        .from("video_sessions")
+        .update({ status: "completed", ended_at: new Date().toISOString() })
+        .eq("id", activeSession.id);
 
-    if (error) {
-      console.error("Error ending session:", error);
-      toast.error("Erro ao encerrar sessão");
-      return;
+      if (error) {
+        console.error("Error ending session:", error);
+        toast.error("Erro ao encerrar sessão");
+        return;
+      }
+
+      setActiveSession(null);
+      fetchSessions();
+      toast.info("Videochamada encerrada");
     }
-
-    toast.success("Sessão encerrada!");
   };
 
   if (loading) {
@@ -127,6 +136,46 @@ const DoctorVideoSessions = () => {
         return status;
     }
   };
+
+  if (activeSession) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Videochamada com Paciente {activeSession.user_id.slice(0, 8)}...</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="w-full h-[600px]">
+            <JitsiMeeting
+              domain="meet.jit.si"
+              roomName={activeSession.room_id}
+              configOverwrite={{
+                startWithAudioMuted: false,
+                startWithVideoMuted: false,
+                disableModeratorIndicator: false,
+                enableEmailInStats: false,
+              }}
+              interfaceConfigOverwrite={{
+                DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
+                SHOW_JITSI_WATERMARK: false,
+              }}
+              userInfo={{
+                displayName: user?.email?.split('@')[0] || 'Médico',
+                email: user?.email || '',
+              }}
+              onApiReady={(externalApi) => {
+                console.log('Jitsi API ready - Doctor');
+              }}
+              onReadyToClose={handleMeetingEnd}
+              getIFrameRef={(iframeRef) => {
+                iframeRef.style.height = '600px';
+                iframeRef.style.width = '100%';
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -186,20 +235,11 @@ const DoctorVideoSessions = () => {
                       {session.status === "scheduled" && (
                         <Button
                           size="sm"
-                          onClick={() => startSession(session.id)}
+                          onClick={() => joinSession(session)}
                           className="w-full"
                         >
-                          Iniciar
-                        </Button>
-                      )}
-                      {session.status === "active" && (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => endSession(session.id)}
-                          className="w-full"
-                        >
-                          Encerrar
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Entrar
                         </Button>
                       )}
                     </div>
