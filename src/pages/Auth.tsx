@@ -5,12 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   // Login form state
@@ -33,17 +32,46 @@ const Auth = () => {
 
     setIsLoading(true);
     
-    const { error } = await signIn(loginEmail, loginPassword);
-    
-    if (error) {
-      if (error.message?.includes("Invalid login credentials")) {
-        toast.error("Email ou senha incorretos");
-      } else {
-        toast.error("Erro ao fazer login: " + error.message);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword
+      });
+
+      if (error) {
+        if (error.message?.includes("Invalid login credentials")) {
+          toast.error("Email ou senha incorretos");
+        } else {
+          toast.error("Erro ao fazer login: " + error.message);
+        }
+        setIsLoading(false);
+        return;
       }
+
+      if (data.user) {
+        // Verificar se o usuário é médico
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .maybeSingle();
+        
+        if (roleData?.role === "doctor") {
+          toast.error("Médicos devem usar a Área Administrativa");
+          await supabase.auth.signOut();
+          setIsLoading(false);
+          return;
+        }
+
+        toast.success("Login realizado com sucesso!");
+        navigate("/patient-area");
+      }
+    } catch (error) {
+      toast.error("Erro ao fazer login");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -66,17 +94,40 @@ const Auth = () => {
 
     setIsLoading(true);
     
-    const { error } = await signUp(signupEmail, signupPassword, signupName);
-    
-    if (error) {
-      if (error.message?.includes("already registered")) {
-        toast.error("Este email já está cadastrado");
-      } else {
-        toast.error("Erro ao criar conta: " + error.message);
+    try {
+      const redirectUrl = `${window.location.origin}/auth`;
+      
+      const { data, error } = await supabase.auth.signUp({
+        email: signupEmail,
+        password: signupPassword,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: signupName
+          }
+        }
+      });
+
+      if (error) {
+        if (error.message?.includes("already registered")) {
+          toast.error("Este email já está cadastrado");
+        } else {
+          toast.error("Erro ao criar conta: " + error.message);
+        }
+        setIsLoading(false);
+        return;
       }
+
+      if (data.user) {
+        toast.success("Conta criada com sucesso!");
+        navigate("/patient-area");
+      }
+    } catch (error) {
+      toast.error("Erro ao criar conta");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   return (

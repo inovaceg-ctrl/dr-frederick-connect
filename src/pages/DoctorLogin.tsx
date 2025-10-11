@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,14 +11,7 @@ const DoctorLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, user } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (user) {
-      navigate("/doctor-area");
-    }
-  }, [user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +23,10 @@ const DoctorLogin = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await signIn(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
@@ -38,6 +34,27 @@ const DoctorLogin = () => {
         } else {
           toast.error("Erro ao fazer login: " + error.message);
         }
+        setIsLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        // Verificar se o usuário é médico
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .maybeSingle();
+        
+        if (roleData?.role !== "doctor") {
+          toast.error("Acesso restrito apenas para médicos");
+          await supabase.auth.signOut();
+          setIsLoading(false);
+          return;
+        }
+
+        toast.success("Bem-vindo, Dr. Frederick!");
+        navigate("/doctor-area");
       }
     } catch (error) {
       toast.error("Erro ao fazer login");
