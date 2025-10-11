@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Instagram, MessageCircle } from "lucide-react";
+import { Instagram, MessageCircle, Shield } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import drFrederickProfile from "@/assets/dr-frederick-profile.jpg";
 
 const Hero = () => {
+  const navigate = useNavigate();
+  
   const scrollToContact = () => {
     const element = document.getElementById("contact");
     if (element) {
@@ -51,6 +54,15 @@ const Hero = () => {
               >
                 <MessageCircle className="w-5 h-5 mr-2" />
                 WhatsApp
+              </Button>
+              <Button
+                onClick={() => navigate("/doctor-area")}
+                size="lg"
+                variant="outline"
+                className="border-2 border-secondary/20 hover:border-secondary/40"
+              >
+                <Shield className="w-5 h-5 mr-2" />
+                Área Administrativa
               </Button>
             </div>
           </div>
