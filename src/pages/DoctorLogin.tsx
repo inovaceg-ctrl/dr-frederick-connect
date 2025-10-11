@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ const DoctorLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -52,6 +54,9 @@ const DoctorLogin = () => {
           setIsLoading(false);
           return;
         }
+
+        // Aguardar um pouco para o AuthContext atualizar
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         toast.success("Bem-vindo, Dr. Frederick!");
         navigate("/doctor-area");

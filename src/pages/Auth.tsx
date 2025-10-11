@@ -5,11 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   // Login form state
@@ -63,6 +65,9 @@ const Auth = () => {
           return;
         }
 
+        // Aguardar um pouco para o AuthContext atualizar
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         toast.success("Login realizado com sucesso!");
         navigate("/patient-area");
       }
