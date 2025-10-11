@@ -121,30 +121,39 @@ export type Database = {
       }
       video_sessions: {
         Row: {
+          answer: Json | null
           appointment_id: string | null
           created_at: string
           ended_at: string | null
+          ice_candidates: Json | null
           id: string
+          offer: Json | null
           room_id: string
           started_at: string | null
           status: string
           user_id: string
         }
         Insert: {
+          answer?: Json | null
           appointment_id?: string | null
           created_at?: string
           ended_at?: string | null
+          ice_candidates?: Json | null
           id?: string
+          offer?: Json | null
           room_id: string
           started_at?: string | null
           status?: string
           user_id: string
         }
         Update: {
+          answer?: Json | null
           appointment_id?: string | null
           created_at?: string
           ended_at?: string | null
+          ice_candidates?: Json | null
           id?: string
+          offer?: Json | null
           room_id?: string
           started_at?: string | null
           status?: string

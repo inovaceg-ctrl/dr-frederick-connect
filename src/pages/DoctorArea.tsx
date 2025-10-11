@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, MessageSquare, Calendar, Video } from "lucide-react";
 import DoctorChat from "@/components/doctor/DoctorChat";
 import DoctorAppointments from "@/components/doctor/DoctorAppointments";
-import DoctorVideoManager from "@/components/doctor/DoctorVideoManager";
+import DoctorVideoManager from "@/components/video/DoctorWebRTCManager";
 
 const DoctorArea = () => {
   const { user, signOut, loading: authLoading } = useAuth();
