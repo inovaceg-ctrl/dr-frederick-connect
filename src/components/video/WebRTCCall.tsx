@@ -49,15 +49,24 @@ export const WebRTCCall = () => {
   const setupPeerConnection = async (roomId: string, isOfferer: boolean) => {
     try {
       // Obter stream local
+      console.log('Requesting camera and microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true
       });
       
+      console.log('Camera access granted. Tracks:', stream.getTracks().map(t => `${t.kind}: ${t.label}`));
       localStreamRef.current = stream;
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
+    // Set local video stream
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = stream;
+      console.log("Local video stream set:", stream.getTracks());
+      
+      // Ensure video plays
+      localVideoRef.current.onloadedmetadata = () => {
+        localVideoRef.current?.play().catch(e => console.error("Error playing local video:", e));
+      };
+    }
 
       // Criar peer connection
       const pc = new RTCPeerConnection(ICE_SERVERS);
@@ -70,9 +79,15 @@ export const WebRTCCall = () => {
 
       // Lidar com stream remoto
       pc.ontrack = (event) => {
-        console.log('Received remote track');
-        if (remoteVideoRef.current) {
+        console.log('Received remote track:', event.track.kind);
+        if (remoteVideoRef.current && event.streams[0]) {
           remoteVideoRef.current.srcObject = event.streams[0];
+          console.log('Remote video stream set');
+          
+          // Ensure remote video plays
+          remoteVideoRef.current.onloadedmetadata = () => {
+            remoteVideoRef.current?.play().catch(e => console.error("Error playing remote video:", e));
+          };
         }
       };
 
@@ -289,7 +304,7 @@ export const WebRTCCall = () => {
                   autoPlay
                   muted
                   playsInline
-                  className="w-full h-64 bg-black rounded-lg object-cover"
+                  className="w-full h-64 bg-black rounded-lg object-cover transform scale-x-[-1]"
                 />
                 <div className="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
                   Você
