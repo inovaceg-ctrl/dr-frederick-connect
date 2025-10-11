@@ -103,15 +103,57 @@ export const DoctorWebRTCManager = () => {
         return;
       }
 
+      // IMPORTANTE: Mostrar a tela de vídeo ANTES de obter câmera
+      // para que os elementos existam quando setarmos srcObject
+      setActiveSession(session);
+      toast.success('Entrando na videochamada!');
+      
+      // Aguardar próximo frame para garantir que os elementos foram renderizados
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Obter stream local
+      console.log('🎥 Doctor requesting camera and microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
         audio: true
       });
       
+      console.log('✅ Doctor camera access granted!');
+      console.log('Stream active:', stream.active);
+      console.log('Video tracks:', stream.getVideoTracks().map(t => ({
+        label: t.label,
+        enabled: t.enabled,
+        readyState: t.readyState
+      })));
+      
       localStreamRef.current = stream;
+      
       if (localVideoRef.current) {
+        console.log('📹 Setting doctor local video srcObject...');
         localVideoRef.current.srcObject = stream;
+        
+        // Try to play immediately
+        try {
+          await localVideoRef.current.play();
+          console.log('✅ Doctor local video playing');
+        } catch (playError) {
+          console.error('❌ Error playing doctor local video immediately:', playError);
+          
+          // Fallback: wait for loadedmetadata
+          localVideoRef.current.onloadedmetadata = async () => {
+            try {
+              await localVideoRef.current?.play();
+              console.log('✅ Doctor local video playing after metadata loaded');
+            } catch (e) {
+              console.error('❌ Error playing doctor local video after metadata:', e);
+            }
+          };
+        }
+      } else {
+        console.error('❌ Doctor localVideoRef.current is null!');
       }
 
       // Criar peer connection
@@ -124,10 +166,31 @@ export const DoctorWebRTCManager = () => {
       });
 
       // Lidar com stream remoto
-      pc.ontrack = (event) => {
-        console.log('Received remote track');
-        if (remoteVideoRef.current) {
+      pc.ontrack = async (event) => {
+        console.log('🎬 Doctor received remote track:', event.track.kind);
+        console.log('Remote stream:', event.streams[0]);
+        
+        if (remoteVideoRef.current && event.streams[0]) {
+          console.log('📹 Setting doctor remote video srcObject...');
           remoteVideoRef.current.srcObject = event.streams[0];
+          
+          // Try to play immediately
+          try {
+            await remoteVideoRef.current.play();
+            console.log('✅ Doctor remote video playing');
+          } catch (playError) {
+            console.error('❌ Error playing doctor remote video immediately:', playError);
+            
+            // Fallback: wait for loadedmetadata
+            remoteVideoRef.current.onloadedmetadata = async () => {
+              try {
+                await remoteVideoRef.current?.play();
+                console.log('✅ Doctor remote video playing after metadata loaded');
+              } catch (e) {
+                console.error('❌ Error playing doctor remote video after metadata:', e);
+              }
+            };
+          }
         }
       };
 
@@ -224,12 +287,23 @@ export const DoctorWebRTCManager = () => {
         .subscribe();
 
       channelRef.current = channel;
-      setActiveSession(session);
-      toast.success('Entrando na videochamada!');
       
-    } catch (error) {
-      console.error("Error joining session:", error);
-      toast.error("Erro ao entrar na sessão");
+    } catch (error: any) {
+      console.error('❌ Error joining session:', error);
+      
+      if (error.name === 'NotAllowedError') {
+        toast.error('Permissão de câmera/microfone negada. Por favor, permita o acesso.');
+      } else if (error.name === 'NotFoundError') {
+        toast.error('Câmera ou microfone não encontrados.');
+      } else if (error.name === 'NotReadableError') {
+        toast.error('Câmera ou microfone já estão em uso.');
+      } else {
+        toast.error('Erro ao entrar na chamada: ' + error.message);
+      }
+      
+      // Se houver erro, voltar ao estado inicial
+      setActiveSession(null);
+      cleanup();
     }
   };
 
@@ -321,7 +395,7 @@ export const DoctorWebRTCManager = () => {
                   autoPlay
                   muted
                   playsInline
-                  className="w-full h-64 bg-black rounded-lg object-cover"
+                  className="w-full h-64 bg-black rounded-lg object-cover transform scale-x-[-1]"
                 />
                 <div className="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
                   Você
