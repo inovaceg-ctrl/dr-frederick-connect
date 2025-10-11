@@ -15,7 +15,7 @@ const ICE_SERVERS = {
 };
 
 export const WebRTCCall = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [isInCall, setIsInCall] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isCameraOn, setIsCameraOn] = useState(true);
@@ -121,12 +121,14 @@ export const WebRTCCall = () => {
 
   const startCall = async () => {
     if (!user) {
+      console.error('User not available:', user);
       toast.error('Você precisa estar logado');
       return;
     }
 
     setIsCreating(true);
     try {
+      console.log('Starting call for user:', user.id);
       const room = `room-${user.id.substring(0, 8)}-${Date.now()}`;
       
       // Criar sessão no banco
@@ -140,7 +142,12 @@ export const WebRTCCall = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+      
+      console.log('Session created:', session);
 
       setSessionId(session.id);
 
@@ -200,9 +207,10 @@ export const WebRTCCall = () => {
       channelRef.current = channel;
       toast.success('Aguardando médico entrar...');
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error starting call:', error);
-      toast.error('Erro ao criar chamada');
+      const errorMessage = error?.message || 'Erro desconhecido';
+      toast.error(`Erro ao criar chamada: ${errorMessage}`);
     } finally {
       setIsCreating(false);
     }
@@ -251,13 +259,18 @@ export const WebRTCCall = () => {
         <CardTitle>Videochamada WebRTC</CardTitle>
       </CardHeader>
       <CardContent>
-        {!isInCall && !isCreating ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center p-8 space-y-4">
+            <Loader2 className="h-16 w-16 text-primary animate-spin" />
+            <p className="text-muted-foreground">Carregando...</p>
+          </div>
+        ) : !isInCall && !isCreating ? (
           <div className="flex flex-col items-center justify-center p-8 space-y-4">
             <Video className="h-16 w-16 text-muted-foreground" />
             <p className="text-muted-foreground text-center">
               Conexão direta peer-to-peer sem custos
             </p>
-            <Button onClick={startCall} size="lg">
+            <Button onClick={startCall} size="lg" disabled={!user}>
               <Video className="h-5 w-5 mr-2" />
               Iniciar Videochamada
             </Button>
