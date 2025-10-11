@@ -56,7 +56,7 @@ const Hero = () => {
                 WhatsApp
               </Button>
               <Button
-                onClick={() => navigate("/doctor-area")}
+                onClick={() => navigate("/auth")}
                 size="lg"
                 variant="outline"
                 className="border-2 border-secondary/20 hover:border-secondary/40"
