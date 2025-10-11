@@ -49,24 +49,57 @@ export const WebRTCCall = () => {
   const setupPeerConnection = async (roomId: string, isOfferer: boolean) => {
     try {
       // Obter stream local
-      console.log('Requesting camera and microphone access...');
+      console.log('🎥 Requesting camera and microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
         audio: true
       });
       
-      console.log('Camera access granted. Tracks:', stream.getTracks().map(t => `${t.kind}: ${t.label}`));
-      localStreamRef.current = stream;
-    // Set local video stream
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
-      console.log("Local video stream set:", stream.getTracks());
+      console.log('✅ Camera access granted!');
+      console.log('Stream active:', stream.active);
+      console.log('Video tracks:', stream.getVideoTracks().map(t => ({
+        label: t.label,
+        enabled: t.enabled,
+        muted: t.muted,
+        readyState: t.readyState
+      })));
+      console.log('Audio tracks:', stream.getAudioTracks().map(t => ({
+        label: t.label,
+        enabled: t.enabled,
+        muted: t.muted,
+        readyState: t.readyState
+      })));
       
-      // Ensure video plays
-      localVideoRef.current.onloadedmetadata = () => {
-        localVideoRef.current?.play().catch(e => console.error("Error playing local video:", e));
-      };
-    }
+      localStreamRef.current = stream;
+      
+      // Set local video stream
+      if (localVideoRef.current) {
+        console.log('📹 Setting local video srcObject...');
+        localVideoRef.current.srcObject = stream;
+        
+        // Try to play immediately
+        try {
+          await localVideoRef.current.play();
+          console.log('✅ Local video playing');
+        } catch (playError) {
+          console.error('❌ Error playing local video immediately:', playError);
+          
+          // Fallback: wait for loadedmetadata
+          localVideoRef.current.onloadedmetadata = async () => {
+            try {
+              await localVideoRef.current?.play();
+              console.log('✅ Local video playing after metadata loaded');
+            } catch (e) {
+              console.error('❌ Error playing local video after metadata:', e);
+            }
+          };
+        }
+      } else {
+        console.error('❌ localVideoRef.current is null!');
+      }
 
       // Criar peer connection
       const pc = new RTCPeerConnection(ICE_SERVERS);
@@ -78,16 +111,31 @@ export const WebRTCCall = () => {
       });
 
       // Lidar com stream remoto
-      pc.ontrack = (event) => {
-        console.log('Received remote track:', event.track.kind);
+      pc.ontrack = async (event) => {
+        console.log('🎬 Received remote track:', event.track.kind);
+        console.log('Remote stream:', event.streams[0]);
+        
         if (remoteVideoRef.current && event.streams[0]) {
+          console.log('📹 Setting remote video srcObject...');
           remoteVideoRef.current.srcObject = event.streams[0];
-          console.log('Remote video stream set');
           
-          // Ensure remote video plays
-          remoteVideoRef.current.onloadedmetadata = () => {
-            remoteVideoRef.current?.play().catch(e => console.error("Error playing remote video:", e));
-          };
+          // Try to play immediately
+          try {
+            await remoteVideoRef.current.play();
+            console.log('✅ Remote video playing');
+          } catch (playError) {
+            console.error('❌ Error playing remote video immediately:', playError);
+            
+            // Fallback: wait for loadedmetadata
+            remoteVideoRef.current.onloadedmetadata = async () => {
+              try {
+                await remoteVideoRef.current?.play();
+                console.log('✅ Remote video playing after metadata loaded');
+              } catch (e) {
+                console.error('❌ Error playing remote video after metadata:', e);
+              }
+            };
+          }
         }
       };
 
@@ -127,9 +175,18 @@ export const WebRTCCall = () => {
       };
 
       return pc;
-    } catch (error) {
-      console.error('Error setting up peer connection:', error);
-      toast.error('Erro ao acessar câmera/microfone');
+    } catch (error: any) {
+      console.error('❌ Error setting up peer connection:', error);
+      
+      if (error.name === 'NotAllowedError') {
+        toast.error('Permissão de câmera/microfone negada. Por favor, permita o acesso.');
+      } else if (error.name === 'NotFoundError') {
+        toast.error('Câmera ou microfone não encontrados.');
+      } else if (error.name === 'NotReadableError') {
+        toast.error('Câmera ou microfone já estão em uso.');
+      } else {
+        toast.error('Erro ao acessar câmera/microfone: ' + error.message);
+      }
       throw error;
     }
   };
