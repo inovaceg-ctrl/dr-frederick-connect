@@ -81,16 +81,25 @@ export const DoctorWebRTCManager = () => {
   };
 
   const fetchSessions = async () => {
+    console.log('🔍 Doctor fetching video sessions...');
+    console.log('Current user:', user?.id);
+    
     const { data, error } = await supabase
       .from("video_sessions")
       .select("*")
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching video sessions:", error);
+      console.error("❌ Error fetching video sessions:", error);
       toast.error("Erro ao carregar sessões de vídeo");
       return;
     }
+
+    console.log('✅ Video sessions fetched:', data?.length || 0, 'sessions');
+    console.log('Sessions data:', data);
+    
+    const scheduledSessions = data?.filter(s => s.status === 'scheduled') || [];
+    console.log('📋 Scheduled sessions available:', scheduledSessions.length);
 
     setSessions((data || []) as unknown as VideoSession[]);
     setLoading(false);
@@ -449,72 +458,101 @@ export const DoctorWebRTCManager = () => {
         <CardTitle>Sessões de Videochamada WebRTC</CardTitle>
       </CardHeader>
       <CardContent>
-        {sessions.length === 0 ? (
-          <p className="text-muted-foreground">Nenhuma sessão encontrada</p>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : sessions.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-2">Nenhuma sessão encontrada</p>
+            <p className="text-sm text-muted-foreground">
+              Aguardando pacientes iniciarem videochamadas...
+            </p>
+          </div>
         ) : (
-          <div className="space-y-4">
-            {sessions.map((session) => (
-              <Card key={session.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">
-                          Paciente: {session.user_id.slice(0, 8)}...
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Video className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Sala: {session.room_id}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">
-                          Criada em:{" "}
-                          {format(new Date(session.created_at), "dd/MM/yyyy 'às' HH:mm", {
-                            locale: ptBR,
-                          })}
-                        </span>
-                      </div>
-                      {session.started_at && (
-                        <p className="text-sm text-muted-foreground">
-                          Iniciada em:{" "}
-                          {format(new Date(session.started_at), "dd/MM/yyyy 'às' HH:mm", {
-                            locale: ptBR,
-                          })}
-                        </p>
-                      )}
-                      {session.ended_at && (
-                        <p className="text-sm text-muted-foreground">
-                          Encerrada em:{" "}
-                          {format(new Date(session.ended_at), "dd/MM/yyyy 'às' HH:mm", {
-                            locale: ptBR,
-                          })}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2 ml-4">
-                      <Badge className={getStatusColor(session.status)}>
-                        {getStatusLabel(session.status)}
-                      </Badge>
-                      {session.status === "scheduled" && session.offer && (
-                        <Button
-                          size="sm"
-                          onClick={() => joinSession(session)}
-                          className="w-full"
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Entrar
-                        </Button>
-                      )}
-                    </div>
+          <>
+            <p className="text-sm text-muted-foreground mb-4">
+              Total de sessões: {sessions.length} | 
+              Aguardando: {sessions.filter(s => s.status === 'scheduled' && s.offer).length}
+            </p>
+            <div className="space-y-4">
+              {sessions.map((session) => {
+                console.log('Rendering session:', {
+                  id: session.id,
+                  status: session.status,
+                  hasOffer: !!session.offer,
+                  canJoin: session.status === "scheduled" && !!session.offer
+                });
+                
+                return (
+                  <Card key={session.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">
+                              Paciente: {session.user_id.slice(0, 8)}...
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Video className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">Sala: {session.room_id}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">
+                              Criada em:{" "}
+                              {format(new Date(session.created_at), "dd/MM/yyyy 'às' HH:mm", {
+                                locale: ptBR,
+                              })}
+                            </span>
+                          </div>
+                          {session.started_at && (
+                            <p className="text-sm text-muted-foreground">
+                              Iniciada em:{" "}
+                              {format(new Date(session.started_at), "dd/MM/yyyy 'às' HH:mm", {
+                                locale: ptBR,
+                              })}
+                            </p>
+                          )}
+                          {session.ended_at && (
+                            <p className="text-sm text-muted-foreground">
+                              Encerrada em:{" "}
+                              {format(new Date(session.ended_at), "dd/MM/yyyy 'às' HH:mm", {
+                                locale: ptBR,
+                              })}
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-2 ml-4">
+                          <Badge className={getStatusColor(session.status)}>
+                            {getStatusLabel(session.status)}
+                          </Badge>
+                          {!session.offer && session.status === "scheduled" && (
+                            <p className="text-xs text-muted-foreground">
+                              Aguardando oferta...
+                            </p>
+                          )}
+                          {session.status === "scheduled" && session.offer && (
+                            <Button
+                              size="sm"
+                              onClick={() => joinSession(session)}
+                              className="w-full"
+                            >
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Entrar
+                            </Button>
+                          )}
+                        </div>
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
+      </>
+      )}
       </CardContent>
     </Card>
   );
