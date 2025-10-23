@@ -4,10 +4,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, MessageSquare, Calendar, Video } from "lucide-react";
+import { LogOut, MessageSquare, Calendar, Video, Users } from "lucide-react";
 import DoctorChat from "@/components/doctor/DoctorChat";
 import DoctorAppointments from "@/components/doctor/DoctorAppointments";
 import DoctorVideoManager from "@/components/video/DoctorWebRTCManager";
+import DoctorPatients from "@/components/doctor/DoctorPatients";
 
 const DoctorArea = () => {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -53,7 +54,7 @@ const DoctorArea = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="chat" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsList className="grid w-full grid-cols-4 mb-8">
             <TabsTrigger value="chat">
               <MessageSquare className="h-4 w-4 mr-2" />
               Chat
@@ -65,6 +66,10 @@ const DoctorArea = () => {
             <TabsTrigger value="video">
               <Video className="h-4 w-4 mr-2" />
               Videochamadas
+            </TabsTrigger>
+            <TabsTrigger value="patients">
+              <Users className="h-4 w-4 mr-2" />
+              Pacientes
             </TabsTrigger>
           </TabsList>
 
@@ -78,6 +83,10 @@ const DoctorArea = () => {
 
           <TabsContent value="video">
             <DoctorVideoManager />
+          </TabsContent>
+
+          <TabsContent value="patients">
+            <DoctorPatients />
           </TabsContent>
         </Tabs>
       </div>
